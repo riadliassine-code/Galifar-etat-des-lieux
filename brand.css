@@ -1,4 +1,4 @@
-@import url("logo-fix.css?v=1");
+@import url("logo-fix.css?v=3");
 
 :root{
   --green:#38E06F;
@@ -32,22 +32,8 @@ body{letter-spacing:-.01em}
   align-items:center;
   gap:10px;
 }
-.logo::before{
-  content:"";
-  display:block;
-  width:50px;
-  height:44px;
-  flex:0 0 50px;
-  border-radius:10px;
-  background-color:#2D3142;
-  background-image:url("assets/logo-galifar.webp");
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:44px auto;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-}
 .logo::after{display:none}
-.head-sub{color:#68706A;font-weight:650;letter-spacing:.01em;margin-left:60px}
+.head-sub{color:#68706A;font-weight:650;letter-spacing:.01em;margin-left:74px}
 .admin-link{
   background:var(--black);
   border:1px solid var(--black);
@@ -122,8 +108,7 @@ h2{letter-spacing:-.025em;font-weight:880}
 
 @media(max-width:430px){
   .logo{font-size:24px;gap:8px}
-  .logo::before{width:44px;height:40px;flex-basis:44px;background-size:39px auto}
-  .head-sub{margin-left:52px}
+  .head-sub{margin-left:62px}
   .admin-link{padding:9px 10px;font-size:11px}
 }
 
