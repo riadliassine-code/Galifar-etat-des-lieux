@@ -1,0 +1,38 @@
+name: Inject Galifar brand theme
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inject-brand.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inject brand stylesheet
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('<meta name="theme-color" content="#111111">', '<meta name="theme-color" content="#F6F5F0">')
+          if 'href="brand.css"' not in s:
+              s = s.replace('</head>', '<link rel="stylesheet" href="brand.css?v=2">\n</head>')
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit brand injection
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+          else
+            git commit -m "Applique les couleurs Galifar au site"
+            git push
+          fi
