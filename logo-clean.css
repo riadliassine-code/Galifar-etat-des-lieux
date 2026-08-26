@@ -1,0 +1,18 @@
+.logo::before{
+  content:"";
+  display:block;
+  width:72px;
+  height:52px;
+  flex:0 0 72px;
+  border-radius:12px;
+  background:#111 url("assets/galifar-symbol-final.webp?v=2") center/64px auto no-repeat;
+  box-shadow:none;
+}
+.logo{display:flex;align-items:center;gap:12px;color:#0D0F0E;font-size:29px;font-weight:950;letter-spacing:-1.2px}
+.logo::after{display:none}
+.head-sub{margin-left:84px;color:#68706A;font-weight:650;letter-spacing:.01em}
+@media(max-width:430px){
+  .logo{font-size:24px;gap:10px}
+  .logo::before{width:64px;height:48px;flex-basis:64px;background-size:58px auto}
+  .head-sub{margin-left:74px}
+}
