@@ -4,13 +4,78 @@
   --green:#38E06F;
   --green-dark:#20B957;
   --black:#0D0F0E;
-  --bg:#F6F5F0;
-  --card:#FFFFFF;
-  --text:#0D0F0E;
-  --muted:#626862;
-  --line:#DADDD8;
+  --bg:#151816;
+  --card:#1F2320;
+  --text:#F5F7F5;
+  --muted:#AEB5AF;
+  --line:#343A35;
   --orange:#F29A2E;
   --red:#D63D3D;
   --blue:#2867C7;
 }
-html,body{background:var(--bg)}body{letter-spacing:-.01em}.app{max-width:600px}.header{background:#fff;color:var(--black);border-bottom:1px solid #D9DDD8;padding:18px 18px 15px}.logo{color:var(--black);font-size:29px;font-weight:950;letter-spacing:-1.2px;display:flex;align-items:center;gap:10px}.logo::after{display:none}.head-sub{color:#68706A;font-weight:650;letter-spacing:.01em;margin-left:74px}.admin-link{background:var(--black);border:1px solid var(--black);color:#fff;border-radius:999px;padding:10px 13px}.main{padding:18px 15px}.card{border:1px solid #DDE0DC;border-top:1px solid #DDE0DC;border-radius:16px;box-shadow:none;padding:20px}h1{font-size:27px;letter-spacing:-.035em;font-weight:900}h2{letter-spacing:-.025em;font-weight:880}.muted{color:#646B65}.input,.select,.textarea{border-radius:10px;border:1px solid #CED3CE;background:#fff}.input:focus,.select:focus,.textarea:focus{border-color:var(--black);box-shadow:0 0 0 3px rgba(56,224,111,.22)}.btn{border-radius:999px;letter-spacing:-.01em}.btn.primary{background:var(--green);color:#08170D;border:1px solid var(--green)}.btn.primary:hover{background:#2DD866}.btn.outline{background:#fff;border:1px solid #111;color:#111}.btn.green{background:var(--green);color:#08170D}.choice{border-radius:13px;border-color:#D7DBD7;transition:border-color .15s ease,transform .15s ease,background .15s ease}.choice:hover{border-color:var(--black);background:#FBFCFA}.choice:active{transform:scale(.995)}.choice-icon{background:#E8FBEF;border-radius:11px}.vehicle{border-radius:13px;border-color:#D8DCD8;transition:border-color .15s ease,transform .15s ease}.vehicle:hover{border-color:var(--black)}.vehicle:active{transform:scale(.99)}.vehicle-photo{background:#EEEFEA;border-radius:10px}.progress{height:6px;background:#E3E6E2}.progress>div{background:var(--green)}.photo-row,.status-btn,.history-card{border-radius:12px;border-color:#D8DCD8}.photo-control{border-radius:10px;background:#EFF1ED}.status-btn.selected{outline:2px solid var(--black);background:#EEFCF2}.notice.info{background:#F0F2EE;color:#373D38;border-color:#DCE0DB}.notice.ok{background:#E9F9EE;color:#155F30;border-color:#BEE7CB}.success-icon{background:var(--green);color:#07170C}.available{background:#E9F9EE;color:#176131}.history-card:hover{border-color:#111}.gallery-item{border-radius:12px;border-color:#D8DCD8}.footer-note{color:#777E78}@media(max-width:430px){.logo{font-size:24px;gap:8px}.head-sub{margin-left:62px}.admin-link{padding:9px 10px;font-size:11px}}@media (prefers-reduced-motion:no-preference){.card,.choice,.vehicle,.status-btn,.history-card{transition:.15s ease}}
+
+html,body{background:var(--bg)!important;color:var(--text)}
+body{letter-spacing:-.01em}
+.app{max-width:600px;background:var(--bg);min-height:100vh}
+.header{background:#101311;color:#fff;border-bottom:1px solid #2B302C;padding:18px 18px 15px}
+.logo{color:#fff;font-size:29px;font-weight:950;letter-spacing:-1.2px;display:flex;align-items:center;gap:10px}
+.logo::after{display:none}
+.head-sub{color:#AEB5AF;font-weight:650;letter-spacing:.01em;margin-left:74px}
+.admin-link{background:#fff;border:1px solid #fff;color:#111;border-radius:999px;padding:10px 13px}
+.main{padding:18px 15px;background:var(--bg)}
+.card{background:var(--card);color:var(--text);border:1px solid var(--line);border-top:1px solid var(--line);border-radius:16px;box-shadow:none;padding:20px}
+h1{font-size:27px;letter-spacing:-.035em;font-weight:900;color:#fff}
+h2{letter-spacing:-.025em;font-weight:880;color:#fff}
+h3{color:#fff}
+.muted{color:var(--muted)}
+.tiny{color:#8F9790}
+.label{color:#F0F2F0}
+.input,.select,.textarea{border-radius:10px;border:1px solid #444B45;background:#161A17;color:#fff}
+.input::placeholder,.textarea::placeholder{color:#7E8780}
+.select option{background:#161A17;color:#fff}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(56,224,111,.18)}
+.btn{border-radius:999px;letter-spacing:-.01em}
+.btn.primary{background:var(--green);color:#08170D;border:1px solid var(--green)}
+.btn.primary:hover{background:#2DD866}
+.btn.outline{background:#1A1E1B;border:1px solid #59605A;color:#fff}
+.btn.green{background:var(--green);color:#08170D}
+.choice{background:#1B1F1C;color:#fff;border-radius:13px;border-color:#3A403B;transition:border-color .15s ease,transform .15s ease,background .15s ease}
+.choice:hover{border-color:var(--green);background:#202521}
+.choice:active{transform:scale(.995)}
+.choice-icon{background:#1B3524;border-radius:11px}
+.arrow{color:#8E9790}
+.vehicle{background:#1B1F1C;color:#fff;border-radius:13px;border-color:#3A403B;transition:border-color .15s ease,transform .15s ease}
+.vehicle:hover{border-color:var(--green)}
+.vehicle:active{transform:scale(.99)}
+.vehicle-photo{background:#262B27;border-radius:10px}
+.vehicle-meta{color:#A7AFA9}
+.progress{height:6px;background:#303631}
+.progress>div{background:var(--green)}
+.photo-row,.status-btn,.history-card{background:#1B1F1C;color:#fff;border-radius:12px;border-color:#3A403B}
+.photo-control{border-radius:10px;background:#292F2A;border-color:#414842}
+.status-btn.selected{outline:2px solid var(--green);background:#1C2D21}
+.notice.info{background:#202522;color:#D8DEDA;border-color:#3A413B}
+.notice.ok{background:#193021;color:#8EE8A8;border-color:#285A38}
+.notice.warn{background:#33281A;color:#F0C781;border-color:#674A22}
+.notice.error{background:#351D1D;color:#F0A0A0;border-color:#6D3030}
+.success-icon{background:var(--green);color:#07170C}
+.available{background:#193021;color:#8EE8A8}
+.maintenance{background:#33281A;color:#F0C781}
+.immobilized{background:#351D1D;color:#F0A0A0}
+.watch{background:#302D18;color:#E8D66B}
+.history-card:hover{border-color:var(--green)}
+.gallery-item{background:#1B1F1C;border-radius:12px;border-color:#3A403B}
+.detail-line{border-bottom-color:#343A35}
+.issue-box{background:#2C241A;border-color:#6A4C28;color:#fff}
+.footer-note{color:#7F8881}
+.empty{color:#9AA29C}
+
+@media(max-width:430px){
+  .logo{font-size:24px;gap:8px}
+  .head-sub{margin-left:62px}
+  .admin-link{padding:9px 10px;font-size:11px}
+}
+
+@media (prefers-reduced-motion:no-preference){
+  .card,.choice,.vehicle,.status-btn,.history-card{transition:.15s ease}
+}
