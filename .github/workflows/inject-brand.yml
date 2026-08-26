@@ -20,9 +20,9 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          s = s.replace('src="assets/logo-galifar-barre.png?v=1"', 'src="assets/galifar-logo-pj.svg?v=2"')
-          for v in range(2, 11):
-              s = s.replace(f'brand.css?v={v}', 'brand.css?v=11')
+          s = s.replace('src="assets/galifar-logo-pj.svg?v=2"', 'src="assets/galifar-logo-pj.svg?v=3"')
+          for v in range(2, 12):
+              s = s.replace(f'brand.css?v={v}', 'brand.css?v=12')
           p.write_text(s, encoding='utf-8')
           PY
       - name: Commit refreshed header
@@ -33,6 +33,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Met le header Galifar au format maquette"
+            git commit -m "Ajuste le header Galifar sur mobile"
             git push
           fi
