@@ -70,17 +70,18 @@ h3{color:#fff}
 .footer-note{color:#7F8881}
 .empty{color:#9AA29C}
 
-/* Branding header */
+/* Branding header — logo de la pièce jointe */
 .brand-wrap{display:flex;align-items:center;gap:12px;min-width:0}
-.brand-logo{content:url("assets/galifar-logo-pj.svg?v=1");width:64px;height:74px;flex:0 0 64px;object-fit:contain;display:block;border-radius:0;background:transparent!important}
-.brand-copy{min-width:0}
+.brand-logo{content:url("assets/galifar-logo-pj.svg?v=2");width:72px;height:84px;flex:0 0 72px;object-fit:contain;display:block;border-radius:0;background:transparent!important}
+.brand-copy{min-width:0;border-left:1px solid #343A35;padding-left:14px}
 
 @media(max-width:430px){
   .logo-text{font-size:24px}
   .head-sub{margin-left:0}
   .admin-link{padding:9px 10px;font-size:11px}
-  .brand-wrap{gap:10px}
-  .brand-logo{content:url("assets/galifar-logo-pj.svg?v=1");width:58px;height:68px;flex-basis:58px;border-radius:0;background:transparent!important}
+  .brand-wrap{gap:9px}
+  .brand-logo{content:url("assets/galifar-logo-pj.svg?v=2");width:64px;height:76px;flex-basis:64px;border-radius:0;background:transparent!important}
+  .brand-copy{padding-left:11px}
 }
 
 @media (prefers-reduced-motion:no-preference){
