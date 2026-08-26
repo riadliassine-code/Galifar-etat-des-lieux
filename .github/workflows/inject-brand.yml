@@ -1,4 +1,4 @@
-name: Inject Galifar brand theme
+name: Refresh Galifar header
 
 on:
   push:
@@ -10,22 +10,26 @@ permissions:
   contents: write
 
 jobs:
-  inject:
+  refresh:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inject brand stylesheet
+      - name: Remove legacy logo hook and bust cache
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          s = s.replace('<meta name="theme-color" content="#111111">', '<meta name="theme-color" content="#F6F5F0">')
-          if 'href="brand.css"' not in s:
-              s = s.replace('</head>', '<link rel="stylesheet" href="brand.css?v=2">\n</head>')
+          s = s.replace('class="logo"', 'class="logo-text"')
+          s = s.replace('brand.css?v=2', 'brand.css?v=8')
+          s = s.replace('brand.css?v=3', 'brand.css?v=8')
+          s = s.replace('brand.css?v=4', 'brand.css?v=8')
+          s = s.replace('brand.css?v=5', 'brand.css?v=8')
+          s = s.replace('brand.css?v=6', 'brand.css?v=8')
+          s = s.replace('brand.css?v=7', 'brand.css?v=8')
           p.write_text(s, encoding='utf-8')
           PY
-      - name: Commit brand injection
+      - name: Commit header refresh
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -33,6 +37,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Applique les couleurs Galifar au site"
+            git commit -m "Supprime définitivement le symbole du header"
             git push
           fi
