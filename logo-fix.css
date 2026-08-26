@@ -1,25 +1,17 @@
 .logo::before{
-  content:""!important;
-  display:block!important;
-  width:74px!important;
-  height:64px!important;
-  flex:0 0 74px!important;
-  background-color:#000!important;
-  background-image:url("assets/logo-galifar.png?v=1")!important;
-  background-repeat:no-repeat!important;
-  background-position:center!important;
-  background-size:contain!important;
-  border-radius:12px!important;
-  box-shadow:0 2px 8px rgba(0,0,0,.12)!important;
+  content:"";
+  display:block;
+  width:64px!important;
+  height:58px!important;
+  flex:0 0 64px!important;
+  background:#000 url("assets/galifar-logo-cadre.webp") center/contain no-repeat!important;
+  border-radius:10px!important;
 }
-.head-sub{
-  margin-left:84px!important;
-}
+
 @media(max-width:430px){
   .logo::before{
-    width:64px!important;
-    height:56px!important;
-    flex-basis:64px!important;
+    width:54px!important;
+    height:50px!important;
+    flex-basis:54px!important;
   }
-  .head-sub{margin-left:72px!important;}
 }
