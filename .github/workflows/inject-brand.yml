@@ -14,22 +14,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Remove legacy logo hook and bust cache
+      - name: Add company logo to header and bust cache
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          s = s.replace('class="logo"', 'class="logo-text"')
-          s = s.replace('brand.css?v=2', 'brand.css?v=8')
-          s = s.replace('brand.css?v=3', 'brand.css?v=8')
-          s = s.replace('brand.css?v=4', 'brand.css?v=8')
-          s = s.replace('brand.css?v=5', 'brand.css?v=8')
-          s = s.replace('brand.css?v=6', 'brand.css?v=8')
-          s = s.replace('brand.css?v=7', 'brand.css?v=8')
+          old = '<header class="header"><div><div class="logo-text">GALIFAR</div><div class="head-sub">État des lieux & maintenance</div></div><button id="openAdmin" class="admin-link" type="button">Espace responsable</button></header>'
+          new = '<header class="header"><div class="brand-wrap"><img class="brand-logo" src="assets/logo-galifar-barre.png?v=1" alt="Logo Galifar"><div class="brand-copy"><div class="logo-text">GALIFAR</div><div class="head-sub">État des lieux & maintenance</div></div></div><button id="openAdmin" class="admin-link" type="button">Espace responsable</button></header>'
+          s = s.replace(old, new)
+          for v in range(2, 10):
+              s = s.replace(f'brand.css?v={v}', 'brand.css?v=10')
           p.write_text(s, encoding='utf-8')
           PY
-      - name: Commit header refresh
+      - name: Commit header logo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -37,6 +35,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Supprime définitivement le symbole du header"
+            git commit -m "Affiche le logo entreprise dans le header"
             git push
           fi
