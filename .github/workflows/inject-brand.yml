@@ -1,4 +1,4 @@
-name: Publish Renault Master image
+name: Refresh Galifar assets
 
 on:
   push:
@@ -10,30 +10,27 @@ permissions:
   contents: write
 
 jobs:
-  publish-image:
+  refresh:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build JPEG
+      - name: Force CSS refresh
         run: |
           python - <<'PY'
           from pathlib import Path
-          import base64
-          src = Path('assets/renault-master-card-v2.b64').read_text().strip()
-          data = base64.b64decode(src)
-          if len(data) < 6000 or not data.startswith(b'\xff\xd8') or not data.endswith(b'\xff\xd9'):
-              raise SystemExit(f'JPEG invalide: {len(data)} octets')
-          Path('assets/renault-master-galifar-final.jpg').write_bytes(data)
-          print(f'JPEG valide: {len(data)} octets')
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('brand.css?v=13','brand.css?v=14')
+          p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit JPEG
+      - name: Commit cache bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/renault-master-galifar-final.jpg
+          git add index.html
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Publie la photo Renault Master valide"
+            git commit -m "Force le rechargement du CSS Renault Master"
             git push
           fi
