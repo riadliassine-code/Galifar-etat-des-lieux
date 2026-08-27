@@ -20,7 +20,7 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('brand.css?v=13','brand.css?v=14')
+          s=s.replace('brand.css?v=14','brand.css?v=15')
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit cache bump
@@ -31,6 +31,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Force le rechargement du CSS Renault Master"
+            git commit -m "Force le CSS final Renault Master"
             git push
           fi
