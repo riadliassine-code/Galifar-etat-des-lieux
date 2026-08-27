@@ -14,6 +14,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Rebuild Renault Master JPEG
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, re
+          src = Path('assets/renault-master-reference-v4.jpg.b64').read_text(encoding='utf-8', errors='ignore')
+          clean = re.sub(r'[^A-Za-z0-9+/=]', '', src)
+          clean += '=' * ((4 - len(clean) % 4) % 4)
+          data = base64.b64decode(clean, validate=False)
+          if len(data) < 50000 or not data.startswith(b'\xff\xd8'):
+              raise SystemExit(f'JPEG source invalide ou tronquée: {len(data)} octets')
+          Path('assets/renault-master-galifar-final.jpg').write_bytes(data)
+          print(f'JPEG Renault Master reconstruit: {len(data)} octets')
+          PY
       - name: Apply monthly odometer rule
         run: |
           python - <<'PY'
@@ -34,14 +48,14 @@ jobs:
               s = s.replace(old_count, new_count)
           p.write_text(s, encoding='utf-8')
           PY
-      - name: Commit monthly odometer rule
+      - name: Commit fixes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
+          git add index.html assets/renault-master-galifar-final.jpg
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Rend le kilométrage obligatoire en fin de mois"
+            git commit -m "Répare la photo Renault Master complète"
             git push
           fi
