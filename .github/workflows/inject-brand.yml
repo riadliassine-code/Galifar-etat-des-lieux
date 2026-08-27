@@ -1,4 +1,4 @@
-name: Refresh Galifar header
+name: Publish Renault Master image
 
 on:
   push:
@@ -10,52 +10,30 @@ permissions:
   contents: write
 
 jobs:
-  refresh:
+  publish-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rebuild Renault Master JPEG
+      - name: Build JPEG
         run: |
           python - <<'PY'
           from pathlib import Path
-          import base64, re
-          src = Path('assets/renault-master-reference-v4.jpg.b64').read_text(encoding='utf-8', errors='ignore')
-          clean = re.sub(r'[^A-Za-z0-9+/=]', '', src)
-          clean += '=' * ((4 - len(clean) % 4) % 4)
-          data = base64.b64decode(clean, validate=False)
-          if len(data) < 50000 or not data.startswith(b'\xff\xd8'):
-              raise SystemExit(f'JPEG source invalide ou tronquée: {len(data)} octets')
+          import base64
+          src = Path('assets/renault-master-card-v2.b64').read_text().strip()
+          data = base64.b64decode(src)
+          if len(data) < 6000 or not data.startswith(b'\xff\xd8') or not data.endswith(b'\xff\xd9'):
+              raise SystemExit(f'JPEG invalide: {len(data)} octets')
           Path('assets/renault-master-galifar-final.jpg').write_bytes(data)
-          print(f'JPEG Renault Master reconstruit: {len(data)} octets')
+          print(f'JPEG valide: {len(data)} octets')
           PY
-      - name: Apply monthly odometer rule
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          old_defs = 'const photoDefs={FOURGON:["Face avant","Face arrière","Côté gauche","Côté droit","Cabine","Zone de chargement","Compteur"],VELO_CARGO:["Vue générale","Roues / pneus","Freins / transmission","Caisse cargo"]};'
-          new_defs = old_defs + '\nfunction isMonthEnd(){ const d=new Date(); const tomorrow=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1); return tomorrow.getMonth()!==d.getMonth(); }\nfunction odometerIsValid(){ const v=$("odometer").value.trim(); return v!=="" && Number.isFinite(Number(v)) && Number(v)>=0; }'
-          if old_defs in s and 'function isMonthEnd()' not in s:
-              s = s.replace(old_defs, new_defs)
-          old_setup = 'function setupPhotos(){ state.photos=new Map(); $("selectedVehicleBanner").textContent=`${state.vehicle?.label||state.vehicle?.code} — ${state.vehicle?.registration||"plaque à renseigner"}`; $("odometerField").classList.toggle("hidden",state.vehicleType!=="FOURGON"); $("odometer").value=""; $("photoList").innerHTML=photoDefs[state.vehicleType].map((cat,i)=>`<div class="photo-row"><div><div class="photo-label">${esc(cat)}</div><span class="required">Obligatoire</span></div><label class="photo-control" data-cat="${esc(cat)}"><span class="camera-icon">📷</span><img class="preview" alt="Aperçu ${esc(cat)}"><input type="file" accept="image/*" capture="environment" data-cat="${esc(cat)}"></label></div>`).join(""); [...$("photoList").querySelectorAll("input[type=file]")].forEach(inp=>inp.addEventListener("change",()=>handlePhoto(inp))); updatePhotoCount(); }'
-          new_setup = 'function setupPhotos(){ state.photos=new Map(); $("selectedVehicleBanner").textContent=`${state.vehicle?.label||state.vehicle?.code} — ${state.vehicle?.registration||"plaque à renseigner"}`; const monthEnd=state.vehicleType==="FOURGON"&&isMonthEnd(); $("odometerField").classList.toggle("hidden",state.vehicleType!=="FOURGON"); const odoLabel=document.querySelector("label[for=odometer]"); if(odoLabel) odoLabel.textContent=monthEnd?"Kilométrage (obligatoire — fin de mois)":"Kilométrage (facultatif)"; $("odometer").required=monthEnd; $("odometer").value=""; $("photoList").innerHTML=photoDefs[state.vehicleType].map((cat,i)=>`<div class="photo-row"><div><div class="photo-label">${esc(cat)}</div><span class="required">Obligatoire</span></div><label class="photo-control" data-cat="${esc(cat)}"><span class="camera-icon">📷</span><img class="preview" alt="Aperçu ${esc(cat)}"><input type="file" accept="image/*" capture="environment" data-cat="${esc(cat)}"></label></div>`).join(""); [...$("photoList").querySelectorAll("input[type=file]")].forEach(inp=>inp.addEventListener("change",()=>handlePhoto(inp))); updatePhotoCount(); }'
-          if old_setup in s:
-              s = s.replace(old_setup, new_setup)
-          old_count = 'function updatePhotoCount(){ const total=photoDefs[state.vehicleType]?.length||0, count=state.photos.size; $("photoCount").textContent=`${count} / ${total} photos obligatoires ajoutées`; $("photoCount").className=`notice ${count===total?"ok":"warn"}`; $("photosContinue").disabled=count!==total; }\n$("photosContinue").addEventListener("click",()=>show("statusScreen"));'
-          new_count = 'function updatePhotoCount(){ const total=photoDefs[state.vehicleType]?.length||0, count=state.photos.size; const monthEnd=state.vehicleType==="FOURGON"&&isMonthEnd(); const odoOk=!monthEnd||odometerIsValid(); $("photoCount").textContent=(count===total&&monthEnd&&!odoOk)?`${count} / ${total} photos ajoutées — kilométrage obligatoire pour la fin du mois`:`${count} / ${total} photos obligatoires ajoutées`; $("photoCount").className=`notice ${count===total&&odoOk?"ok":"warn"}`; $("photosContinue").disabled=count!==total||!odoOk; }\n$("odometer").addEventListener("input",updatePhotoCount);\n$("photosContinue").addEventListener("click",()=>{ if(state.vehicleType==="FOURGON"&&isMonthEnd()&&!odometerIsValid()){ alert("Le relevé kilométrique est obligatoire en fin de mois."); return; } show("statusScreen"); });'
-          if old_count in s:
-              s = s.replace(old_count, new_count)
-          p.write_text(s, encoding='utf-8')
-          PY
-      - name: Commit fixes
+      - name: Commit JPEG
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html assets/renault-master-galifar-final.jpg
+          git add assets/renault-master-galifar-final.jpg
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Répare la photo Renault Master complète"
+            git commit -m "Publie la photo Renault Master valide"
             git push
           fi
