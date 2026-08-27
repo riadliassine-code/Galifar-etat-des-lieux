@@ -14,18 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Refresh company header and bust cache
+      - name: Apply Galifar fixes and bust cache
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          s = s.replace('src="assets/galifar-logo-pj.svg?v=2"', 'src="assets/galifar-logo-pj.svg?v=3"')
-          for v in range(2, 12):
-              s = s.replace(f'brand.css?v={v}', 'brand.css?v=12')
+          s = s.replace('src="assets/galifar-logo-pj.svg?v=3"', 'src="assets/galifar-logo-cadre.webp?v=4"')
+          for v in range(2, 13):
+              s = s.replace(f'brand.css?v={v}', 'brand.css?v=13')
           p.write_text(s, encoding='utf-8')
           PY
-      - name: Commit refreshed header
+      - name: Commit Galifar fixes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -33,6 +33,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Ajuste le header Galifar sur mobile"
+            git commit -m "Applique les corrections logo et statuts Galifar"
             git push
           fi
