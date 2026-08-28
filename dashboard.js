@@ -32,27 +32,55 @@
     }finally{loading=false;}
   }
 
+  function typeMetrics(rows){
+    return {
+      total:rows.length,
+      depart:rows.filter(v=>v.cycle==="DEPART_A_FAIRE").length,
+      tour:rows.filter(v=>v.cycle==="EN_TOURNEE").length,
+      retour:rows.filter(v=>v.cycle==="RETOUR_A_FAIRE").length,
+      termine:rows.filter(v=>v.cycle==="TERMINE").length,
+      maintenance:rows.filter(v=>v.status==="MAINTENANCE").length,
+      immobilise:rows.filter(v=>v.status==="IMMOBILIZED").length
+    };
+  }
+
+  function kpiGroup(title,icon,rows){
+    const x=typeMetrics(rows);
+    return `<section class="dash-type-panel"><div class="dash-type-title"><span class="dash-type-icon">${icon}</span><div><h3>${title}</h3><span>${x.total} véhicule(s)</span></div></div><div class="dash-type-kpis"><div class="dash-mini-kpi dash-kpi-green"><b>${x.depart}</b><span>Départs à faire</span></div><div class="dash-mini-kpi dash-kpi-blue"><b>${x.tour}</b><span>En tournée</span></div><div class="dash-mini-kpi dash-kpi-orange"><b>${x.retour}</b><span>Retours à faire</span></div><div class="dash-mini-kpi dash-kpi-green"><b>${x.termine}</b><span>Retours effectués</span></div><div class="dash-mini-kpi dash-kpi-orange"><b>${x.maintenance}</b><span>Maintenance</span></div><div class="dash-mini-kpi dash-kpi-red"><b>${x.immobilise}</b><span>Immobilisés</span></div></div></section>`;
+  }
+
+  function vehicleRow(v){
+    const driver=v.retour_driver||v.depart_driver||"—";
+    const issue=v.open_issue?`<div class="dash-alert">⚠ ${esc(v.open_issue.category)} • ${esc(v.open_issue.severity)}</div>`:"";
+    const technical=v.status==="IMMOBILIZED"?'<span class="status-pill immobilized">Immobilisé</span>':v.status==="MAINTENANCE"?'<span class="status-pill maintenance">Maintenance</span>':'';
+    return `<article class="dash-fleet-row"><div class="dash-vehicle"><b>${esc(v.label||v.code)}</b><span>${esc(v.registration||"Plaque à renseigner")}</span></div><div><span class="dash-cycle ${cycleClass(v.cycle)}">${cycleLabel(v.cycle)}</span>${technical}</div><div class="dash-cell"><span class="dash-caption">Livreur</span><b>${esc(driver)}</b></div><div class="dash-cell"><span class="dash-caption">Départ</span><b>${fmtTime(v.depart_at)}</b></div><div class="dash-cell"><span class="dash-caption">Retour</span><b>${fmtTime(v.retour_at)}</b></div>${issue}</article>`;
+  }
+
+  function fleetGroup(title,icon,rows){
+    return `<section class="dash-fleet-group"><div class="dash-fleet-group-head"><div><span class="dash-group-icon">${icon}</span><h3>${title}</h3></div><span>${rows.length} affiché(s)</span></div>${rows.length?`<div class="dashboard-fleet-list">${rows.map(vehicleRow).join("")}</div>`:'<div class="empty">Aucun véhicule dans cette catégorie avec les filtres actuels.</div>'}</section>`;
+  }
+
   function render(){
-    const d=dashboardData||{},m=d.metrics||{};
+    const d=dashboardData||{};
+    const all=d.fleet||[];
     const date=byId("dashboardDate");
     if(date)date.textContent=`Suivi opérationnel • ${new Intl.DateTimeFormat("fr-FR",{dateStyle:"full"}).format(new Date())}`;
-    const kpis=[["Départs réalisés",m.departs||0,"dash-kpi-green"],["En tournée",m.en_tournee||0,"dash-kpi-blue"],["Retours à faire",m.retours_a_faire||0,"dash-kpi-orange"],["Retours effectués",m.retours_effectues||0,"dash-kpi-green"],["Anomalies ouvertes",m.anomalies_ouvertes||0,"dash-kpi-orange"],["Immobilisés",m.immobilises||0,"dash-kpi-red"]];
+
+    const vans=all.filter(v=>v.type==="FOURGON");
+    const bikes=all.filter(v=>v.type==="VELO_CARGO");
     const kpiBox=byId("dashboardKpis");
-    if(kpiBox)kpiBox.innerHTML=kpis.map(k=>`<div class="dash-kpi ${k[2]}"><div class="dash-kpi-value">${esc(k[1])}</div><div class="dash-kpi-label">${esc(k[0])}</div></div>`).join("");
+    if(kpiBox)kpiBox.innerHTML=kpiGroup("Fourgons","🚐",vans)+kpiGroup("Vélos cargo","🚲",bikes);
 
     const q=byId("dashboardSearch")?.value?.trim().toLowerCase()||"";
     const f=byId("dashboardCycleFilter")?.value||"";
-    const fleet=(d.fleet||[]).filter(v=>{const hay=((v.label||v.code||"")+" "+(v.registration||"")+" "+(v.depart_driver||"")+" "+(v.retour_driver||"")).toLowerCase();return(!q||hay.includes(q))&&(!f||v.cycle===f)});
+    const filtered=all.filter(v=>{const hay=((v.label||v.code||"")+" "+(v.registration||"")+" "+(v.depart_driver||"")+" "+(v.retour_driver||"")).toLowerCase();return(!q||hay.includes(q))&&(!f||v.cycle===f)});
+    const filteredVans=filtered.filter(v=>v.type==="FOURGON");
+    const filteredBikes=filtered.filter(v=>v.type==="VELO_CARGO");
     const count=byId("dashboardFleetCount");
-    if(count)count.textContent=`${fleet.length} véhicule(s) affiché(s) • ${m.departs_a_faire||0} départ(s) encore à faire`;
+    if(count)count.textContent=`${filteredVans.length} fourgon(s) • ${filteredBikes.length} vélo(s) cargo`;
     const box=byId("dashboardFleet");
     if(!box)return;
-    box.innerHTML=fleet.length?fleet.map(v=>{
-      const driver=v.retour_driver||v.depart_driver||"—";
-      const issue=v.open_issue?`<div class="dash-alert">⚠ ${esc(v.open_issue.category)} • ${esc(v.open_issue.severity)}</div>`:"";
-      const technical=v.status==="IMMOBILIZED"?'<span class="status-pill immobilized">Immobilisé</span>':v.status==="MAINTENANCE"?'<span class="status-pill maintenance">Maintenance</span>':'';
-      return `<article class="dash-fleet-row"><div class="dash-vehicle"><b>${esc(v.label||v.code)}</b><span>${esc(v.registration||"Plaque à renseigner")}</span></div><div><span class="dash-cycle ${cycleClass(v.cycle)}">${cycleLabel(v.cycle)}</span>${technical}</div><div class="dash-cell"><span class="dash-caption">Livreur</span><b>${esc(driver)}</b></div><div class="dash-cell"><span class="dash-caption">Départ</span><b>${fmtTime(v.depart_at)}</b></div><div class="dash-cell"><span class="dash-caption">Retour</span><b>${fmtTime(v.retour_at)}</b></div>${issue}</article>`;
-    }).join(""):'<div class="empty">Aucun véhicule ne correspond aux filtres.</div>';
+    box.innerHTML=fleetGroup("Fourgons","🚐",filteredVans)+fleetGroup("Vélos cargo","🚲",filteredBikes);
   }
 
   function init(){
