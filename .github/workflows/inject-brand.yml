@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Refresh dashboard assets
+      - name: Refresh dashboard alerts
         run: |
           python - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('dashboard.css?v=2','dashboard.css?v=3')
-          s=s.replace('dashboard.js?v=2','dashboard.js?v=3')
+          s=s.replace('dashboard.css?v=3','dashboard.css?v=4')
+          s=s.replace('dashboard.js?v=3','dashboard.js?v=4')
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit dashboard refresh
@@ -32,6 +32,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Active le calendrier historique du dashboard"
+            git commit -m "Active les alertes départ après 11h"
             git push
           fi
