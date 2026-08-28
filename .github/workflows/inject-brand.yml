@@ -20,8 +20,8 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('dashboard.css?v=1','dashboard.css?v=2')
-          s=s.replace('dashboard.js?v=1','dashboard.js?v=2')
+          s=s.replace('dashboard.css?v=2','dashboard.css?v=3')
+          s=s.replace('dashboard.js?v=2','dashboard.js?v=3')
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit dashboard refresh
@@ -32,6 +32,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Sépare fourgons et vélos dans le dashboard"
+            git commit -m "Active le calendrier historique du dashboard"
             git push
           fi
