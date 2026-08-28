@@ -14,23 +14,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Force CSS refresh
+      - name: Apply touring vehicle UI
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('brand.css?v=14','brand.css?v=15')
+          new_func=r'''async function loadVehicles(){ show("vehicleScreen"); $("vehicleGrid").innerHTML=""; $("vehicleLoading").className="notice info"; $("vehicleLoading").textContent="Chargement des véhicules…"; $("vehicleLoading").classList.remove("hidden"); $("vehicleHeading").textContent=state.vehicleType==="FOURGON"?"Choisis le fourgon":"Choisis le vélo cargo"; try{ const data=await apiGet({action:"vehicles",type:state.vehicleType}); const vehicles=data.vehicles||[]; if(!vehicles.length){$("vehicleLoading").textContent="Aucun véhicule disponible.";return;} $("vehicleLoading").classList.add("hidden"); $("vehicleGrid").innerHTML=vehicles.map(v=>{ const touring=!!v.in_tour; const tourInfo=touring?`<span class="status-pill touring-pill">Véhicule en tournée</span><div class="vehicle-tour-info">État des lieux : ${esc(v.tour_driver||"Livreur")}${v.tour_started_at?` • ${fmtDate(v.tour_started_at)}`:""}</div>`:`<span class="status-pill ${vehicleStatusClass(v.status)}">${vehicleStatusLabel(v.status)}</span>`; return `<button class="vehicle${touring?" touring":""}" data-id="${esc(v.id)}" type="button" ${touring?"disabled aria-disabled=\"true\"":""}><div class="vehicle-photo">${v.photo_url?`<img src="${esc(v.photo_url)}" alt="${esc(v.label||v.code)}">`:(v.type==="FOURGON"?"🚐":"🚲")}</div><div class="vehicle-name">${esc(v.label||v.code)}</div><div class="vehicle-meta">${v.registration?esc(v.registration):"Plaque à renseigner"}</div>${tourInfo}</button>`; }).join(""); [...$("vehicleGrid").querySelectorAll(".vehicle:not(.touring)")].forEach(el=>el.addEventListener("click",()=>{ state.vehicle=vehicles.find(v=>v.id===el.dataset.id); setupPhotos(); show("photosScreen"); })); }catch(e){ $("vehicleLoading").className="notice error"; $("vehicleLoading").textContent="Impossible de charger les véhicules : "+e.message; } }'''
+          s, n = re.subn(r'async function loadVehicles\(\)\{.*?\n\nconst photoDefs=', new_func+'\n\nconst photoDefs=', s, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('loadVehicles replacement failed')
+          s=s.replace('brand.css?v=15','brand.css?v=16')
           p.write_text(s,encoding='utf-8')
+
+          css=Path('brand.css')
+          c=css.read_text(encoding='utf-8')
+          marker='/* Véhicule en tournée */'
+          if marker not in c:
+              c += '''\n\n/* Véhicule en tournée */\n.vehicle.touring{opacity:.68!important;cursor:not-allowed!important;border-color:#59605A!important}\n.vehicle.touring:hover{border-color:#59605A!important}\n.touring-pill{background:#24354A!important;color:#A9CDF7!important;display:inline-flex!important}\n.vehicle-tour-info{font-size:11px;color:#9FB4C8;margin-top:6px;line-height:1.3}\n'''
+          css.write_text(c,encoding='utf-8')
           PY
-      - name: Commit cache bump
+      - name: Commit touring UI
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
+          git add index.html brand.css
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Force le CSS final Renault Master"
+            git commit -m "Affiche les véhicules en tournée"
             git push
           fi
