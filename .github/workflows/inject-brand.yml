@@ -14,17 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Refresh dashboard alerts
+      - name: Switch driver identification to first name
         run: |
           python - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('dashboard.css?v=3','dashboard.css?v=4')
-          s=s.replace('dashboard.js?v=3','dashboard.js?v=4')
+          s=s.replace('Renseigne ton nom et prénom pour commencer l\'état des lieux.','Renseigne ton prénom pour commencer l\'état des lieux.')
+          s=s.replace('Nom et prénom du livreur','Prénom du livreur')
+          s=s.replace('placeholder="Ex. Karim Dupont"','placeholder="Ex. Karim"')
+          s=s.replace('autocomplete="name"','autocomplete="given-name"')
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit dashboard refresh
+      - name: Commit first-name identification
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -32,6 +34,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Active les alertes départ après 11h"
+            git commit -m "Identifie les livreurs par prénom"
             git push
           fi
