@@ -90,3 +90,10 @@ h3{color:#fff}
 @media (prefers-reduced-motion:no-preference){
   .card,.choice,.vehicle,.status-btn,.history-card{transition:.15s ease}
 }
+
+
+/* Véhicule en tournée */
+.vehicle.touring{opacity:.68!important;cursor:not-allowed!important;border-color:#59605A!important}
+.vehicle.touring:hover{border-color:#59605A!important}
+.touring-pill{background:#24354A!important;color:#A9CDF7!important;display:inline-flex!important}
+.vehicle-tour-info{font-size:11px;color:#9FB4C8;margin-top:6px;line-height:1.3}
