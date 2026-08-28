@@ -14,25 +14,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inject dashboard assets
+      - name: Refresh dashboard assets
         run: |
           python - <<'PY'
           from pathlib import Path
-
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-
-          dashboard = '''<section id="adminDashboardScreen" class="screen"><div class="card dashboard-card"><div class="admin-header"><div><h1>Tableau de bord flotte</h1><div class="muted" id="dashboardDate">Suivi opérationnel du jour</div></div><div class="dash-actions"><button class="btn small outline" id="dashboardRefresh" type="button">Actualiser</button><button class="btn small outline" id="dashboardLogout" type="button">Quitter</button></div></div><div id="dashboardMessage"></div><div id="dashboardKpis" class="dashboard-grid"></div><div class="dashboard-toolbar"><input id="dashboardSearch" class="input" placeholder="Rechercher véhicule, plaque ou livreur"><select id="dashboardCycleFilter" class="select"><option value="">Tous les statuts</option><option value="DEPART_A_FAIRE">Départ à faire</option><option value="EN_TOURNEE">En tournée</option><option value="RETOUR_A_FAIRE">Retour à faire</option><option value="TERMINE">Retour effectué</option></select></div><div class="dashboard-section-head"><div><h2>Suivi de la flotte</h2><div class="muted" id="dashboardFleetCount"></div></div><button class="btn small outline" id="openHistoryFromDashboard" type="button">Historique complet</button></div><div id="dashboardFleet" class="dashboard-fleet"></div></div></section>'''
-
-          if 'id="adminDashboardScreen"' not in s:
-              s=s.replace('<section id="adminListScreen"', dashboard + '\n<section id="adminListScreen"', 1)
-          if 'dashboard.css' not in s:
-              s=s.replace('</head>', '<link rel="stylesheet" href="dashboard.css?v=1">\n</head>', 1)
-          if 'dashboard.js' not in s:
-              s=s.replace('</body>', '<script src="dashboard.js?v=1"></script>\n</body>', 1)
+          s=s.replace('dashboard.css?v=1','dashboard.css?v=2')
+          s=s.replace('dashboard.js?v=1','dashboard.js?v=2')
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit dashboard injection
+      - name: Commit dashboard refresh
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -40,6 +32,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Active le tableau de bord responsable"
+            git commit -m "Sépare fourgons et vélos dans le dashboard"
             git push
           fi
