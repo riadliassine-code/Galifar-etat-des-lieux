@@ -55,12 +55,23 @@
   function vehicleRow(v){
     const driver=v.retour_driver||v.depart_driver||"—";
     const issue=v.open_issue?`<div class="dash-alert">⚠ ${esc(v.open_issue.category)} • ${esc(v.open_issue.severity)}</div>`:"";
+    const late=v.missing_depart_alert?'<div class="dash-missing-alert">🚨 État des lieux de départ non effectué à 11h00</div>':'';
     const technical=v.status==="IMMOBILIZED"?'<span class="status-pill immobilized">Immobilisé</span>':v.status==="MAINTENANCE"?'<span class="status-pill maintenance">Maintenance</span>':'';
-    return `<article class="dash-fleet-row"><div class="dash-vehicle"><b>${esc(v.label||v.code)}</b><span>${esc(v.registration||"Plaque à renseigner")}</span></div><div><span class="dash-cycle ${cycleClass(v.cycle)}">${cycleLabel(v.cycle)}</span>${technical}</div><div class="dash-cell"><span class="dash-caption">Livreur</span><b>${esc(driver)}</b></div><div class="dash-cell"><span class="dash-caption">Départ</span><b>${fmtTime(v.depart_at)}</b></div><div class="dash-cell"><span class="dash-caption">Retour</span><b>${fmtTime(v.retour_at)}</b></div>${issue}</article>`;
+    return `<article class="dash-fleet-row${v.missing_depart_alert?" dash-row-alert":""}"><div class="dash-vehicle"><b>${esc(v.label||v.code)}</b><span>${esc(v.registration||"Plaque à renseigner")}</span></div><div><span class="dash-cycle ${cycleClass(v.cycle)}">${cycleLabel(v.cycle)}</span>${technical}</div><div class="dash-cell"><span class="dash-caption">Livreur</span><b>${esc(driver)}</b></div><div class="dash-cell"><span class="dash-caption">Départ</span><b>${fmtTime(v.depart_at)}</b></div><div class="dash-cell"><span class="dash-caption">Retour</span><b>${fmtTime(v.retour_at)}</b></div>${late}${issue}</article>`;
   }
 
   function fleetGroup(title,icon,rows){
     return `<section class="dash-fleet-group"><div class="dash-fleet-group-head"><div><span class="dash-group-icon">${icon}</span><h3>${title}</h3></div><span>${rows.length} affiché(s)</span></div>${rows.length?`<div class="dashboard-fleet-list">${rows.map(vehicleRow).join("")}</div>`:'<div class="empty">Aucun véhicule dans cette catégorie avec les filtres actuels.</div>'}</section>`;
+  }
+
+  function renderAlerts(){
+    const section=byId("dashboardAlertsSection"),box=byId("dashboardAlerts"),count=byId("dashboardAlertCount");
+    if(!section||!box)return;
+    const rows=dashboardData?.alerts||[];
+    const active=!!dashboardData?.depart_alert_active;
+    section.classList.toggle("hidden",!active||!rows.length);
+    if(count)count.textContent=`${rows.length} véhicule(s) sans état des lieux de départ`;
+    box.innerHTML=rows.map(a=>`<div class="dash-operational-alert"><div class="dash-operational-alert-icon">!</div><div><b>${esc(a.vehicle_label||a.vehicle_code||"Véhicule")}${a.registration?` — ${esc(a.registration)}`:""}</b><span>${esc(a.message||"État des lieux de départ non effectué")}</span></div></div>`).join("");
   }
 
   function renderIncidents(){
@@ -93,6 +104,7 @@
     if(count)count.textContent=`${filteredVans.length} fourgon(s) • ${filteredBikes.length} vélo(s) cargo`;
     const box=byId("dashboardFleet");
     if(box)box.innerHTML=fleetGroup("Fourgons","🚐",filteredVans)+fleetGroup("Vélos cargo","🚲",filteredBikes);
+    renderAlerts();
     renderIncidents();
   }
 
@@ -108,6 +120,13 @@
       byId("dashboardDay").addEventListener("change",fetchDashboard);
     }
     const fleet=byId("dashboardFleet");
+    if(fleet&&!byId("dashboardAlertsSection")){
+      const section=document.createElement("section");
+      section.id="dashboardAlertsSection";
+      section.className="dash-operational-alerts hidden";
+      section.innerHTML='<div class="dashboard-section-head"><div><h2>🚨 Alertes à traiter</h2><div class="muted" id="dashboardAlertCount"></div></div></div><div id="dashboardAlerts" class="dash-operational-alert-list"></div>';
+      fleet.parentNode.insertBefore(section,fleet);
+    }
     if(fleet&&!byId("dashboardIncidents")){
       const section=document.createElement("section");
       section.className="dash-incidents-section";
