@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply departure return cycle UI
+      - name: Build manager dashboard
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -22,26 +22,108 @@ jobs:
 
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          new_func=r'''async function loadVehicles(){ show("vehicleScreen"); $("vehicleGrid").innerHTML=""; $("vehicleLoading").className="notice info"; $("vehicleLoading").textContent="Chargement des véhicules…"; $("vehicleLoading").classList.remove("hidden"); $("vehicleHeading").textContent=state.vehicleType==="FOURGON"?"Choisis le fourgon":"Choisis le vélo cargo"; try{ const data=await apiGet({action:"vehicles",type:state.vehicleType}); const vehicles=data.vehicles||[]; if(!vehicles.length){$("vehicleLoading").textContent="Aucun véhicule disponible.";return;} $("vehicleLoading").classList.add("hidden"); $("vehicleGrid").innerHTML=vehicles.map(v=>{ const touring=!!v.in_tour, done=!!v.cycle_complete, returnReady=!!v.ready_for_return; let stateInfo=""; if(touring){ stateInfo=`<span class="status-pill touring-pill">Véhicule en tournée</span><div class="vehicle-tour-info">Départ : ${esc(v.tour_driver||"Livreur")}${v.tour_started_at?` • ${fmtDate(v.tour_started_at)}`:""}</div>`; } else if(done){ stateInfo=`<span class="status-pill cycle-done-pill">Retour effectué</span><div class="vehicle-tour-info">Retour : ${esc(v.last_driver||"Livreur")}${v.last_inspection_at?` • ${fmtDate(v.last_inspection_at)}`:""}</div>`; } else if(returnReady){ stateInfo=`<span class="status-pill return-pill">Retour à effectuer</span><div class="vehicle-tour-info">Départ : ${esc(v.last_driver||"Livreur")}${v.last_inspection_at?` • ${fmtDate(v.last_inspection_at)}`:""}</div>`; } else { stateInfo=`<span class="status-pill departure-pill">Départ à effectuer</span>`; } const blocked=touring||done; return `<button class="vehicle${touring?" touring":""}${done?" cycle-complete":""}" data-id="${esc(v.id)}" type="button" ${blocked?"disabled aria-disabled=\"true\"":""}><div class="vehicle-photo">${v.photo_url?`<img src="${esc(v.photo_url)}" alt="${esc(v.label||v.code)}">`:(v.type==="FOURGON"?"🚐":"🚲")}</div><div class="vehicle-name">${esc(v.label||v.code)}</div><div class="vehicle-meta">${v.registration?esc(v.registration):"Plaque à renseigner"}</div>${stateInfo}</button>`; }).join(""); [...$("vehicleGrid").querySelectorAll(".vehicle:not(.touring):not(.cycle-complete)")].forEach(el=>el.addEventListener("click",()=>{ state.vehicle=vehicles.find(v=>v.id===el.dataset.id); setupPhotos(); show("photosScreen"); })); }catch(e){ $("vehicleLoading").className="notice error"; $("vehicleLoading").textContent="Impossible de charger les véhicules : "+e.message; } }'''
-          s, n = re.subn(r'async function loadVehicles\(\)\{.*?\n\nconst photoDefs=', new_func+'\n\nconst photoDefs=', s, count=1, flags=re.S)
-          if n != 1:
-              raise SystemExit('loadVehicles replacement failed')
 
-          s=s.replace('$("selectedVehicleBanner").textContent=`${state.vehicle?.label||state.vehicle?.code} — ${state.vehicle?.registration||"plaque à renseigner"}`;', '$("selectedVehicleBanner").textContent=`État des lieux ${state.vehicle?.next_inspection_type==="RETOUR"?"de retour":"de départ"} — ${state.vehicle?.label||state.vehicle?.code} — ${state.vehicle?.registration||"plaque à renseigner"}`;')
-          s=s.replace('$("successText").textContent=`${state.driverName} — ${state.vehicle.label||state.vehicle.code} — ${statusLabel(state.overallStatus)}`;', '$("successText").textContent=`${created.inspectionType==="RETOUR"?"Retour":"Départ"} — ${state.driverName} — ${state.vehicle.label||state.vehicle.code} — ${statusLabel(state.overallStatus)}`;')
-          s=s.replace('<div class="history-date">${fmtDate(r.completed_at)}${issues.length?` • ${esc(issues[0].category)}`:""}</div>', '<div class="history-date">${r.inspection_type==="RETOUR"?"Retour":"Départ"} • ${fmtDate(r.completed_at)}${issues.length?` • ${esc(issues[0].category)}`:""}</div>')
-          s=s.replace('<div class="detail-line"><b>Date :</b> ${fmtDate(i.completed_at)}</div><div class="detail-line"><b>État :</b>', '<div class="detail-line"><b>Type :</b> ${i.inspection_type==="RETOUR"?"Retour":"Départ"}</div><div class="detail-line"><b>Date :</b> ${fmtDate(i.completed_at)}</div><div class="detail-line"><b>État :</b>')
-          s=s.replace('brand.css?v=16','brand.css?v=17')
+          dashboard='''
+<section id="adminDashboardScreen" class="screen"><div class="card dashboard-card">
+  <div class="admin-header"><div><h1>Tableau de bord flotte</h1><div class="muted" id="dashboardDate">Suivi opérationnel du jour</div></div><div class="dash-actions"><button class="btn small outline" id="dashboardRefresh" type="button">Actualiser</button><button class="btn small outline" id="dashboardLogout" type="button">Quitter</button></div></div>
+  <div id="dashboardMessage"></div>
+  <div id="dashboardKpis" class="dashboard-grid"></div>
+  <div class="dashboard-toolbar"><input id="dashboardSearch" class="input" placeholder="Rechercher véhicule, plaque ou livreur"><select id="dashboardCycleFilter" class="select"><option value="">Tous les statuts</option><option value="DEPART_A_FAIRE">Départ à faire</option><option value="EN_TOURNEE">En tournée</option><option value="RETOUR_A_FAIRE">Retour à faire</option><option value="TERMINE">Retour effectué</option></select></div>
+  <div class="dashboard-section-head"><div><h2>Suivi de la flotte</h2><div class="muted" id="dashboardFleetCount"></div></div><button class="btn small outline" id="openHistoryFromDashboard" type="button">Historique complet</button></div>
+  <div id="dashboardFleet" class="dashboard-fleet"></div>
+</div></section>
+'''
+          if 'id="adminDashboardScreen"' not in s:
+              s=s.replace('<section id="adminListScreen"',dashboard+'\n<section id="adminListScreen"',1)
+
+          s=s.replace('const API_URL = `${PROJECT_URL}/functions/v1/galifar-api`;', 'const API_URL = `${PROJECT_URL}/functions/v1/galifar-api`;\nconst DASHBOARD_URL = `${PROJECT_URL}/functions/v1/galifar-dashboard`;')
+          s=s.replace('function show(id){ screens.forEach(s=>s.classList.toggle("active",s.id===id)); window.scrollTo(0,0); }','function show(id){ screens.forEach(s=>s.classList.toggle("active",s.id===id)); document.body.classList.toggle("admin-mode",id.startsWith("admin")); window.scrollTo(0,0); }')
+
+          dashboard_js=r'''
+async function dashboardPost(body){ const r=await fetch(DASHBOARD_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||`Erreur ${r.status}`); return j; }
+function cycleLabel(c){ return c==="EN_TOURNEE"?"En tournée":c==="RETOUR_A_FAIRE"?"Retour à faire":c==="TERMINE"?"Retour effectué":"Départ à faire"; }
+function cycleClass(c){ return c==="EN_TOURNEE"?"dash-tour":c==="RETOUR_A_FAIRE"?"dash-return":c==="TERMINE"?"dash-done":"dash-depart"; }
+function timeOnly(v){ if(!v)return"—"; try{return new Intl.DateTimeFormat("fr-FR",{hour:"2-digit",minute:"2-digit"}).format(new Date(v));}catch{return"—";} }
+async function loadAdminDashboard(){
+  show("adminDashboardScreen");
+  $("dashboardMessage").innerHTML='<div class="notice info">Chargement du tableau de bord…</div>';
+  try{
+    const data=await dashboardPost({action:"dashboard",code:state.adminCode});
+    state.dashboard=data;
+    $("dashboardMessage").innerHTML="";
+    $("dashboardDate").textContent=`Suivi opérationnel • ${new Intl.DateTimeFormat("fr-FR",{dateStyle:"full"}).format(new Date())}`;
+    renderDashboard();
+  }catch(e){ $("dashboardMessage").innerHTML=`<div class="notice error">${esc(e.message)}</div>`; }
+}
+function renderDashboard(){
+  const d=state.dashboard||{},m=d.metrics||{};
+  const kpis=[
+    ["Départs réalisés",m.departs??0,"dash-kpi-green"],
+    ["En tournée",m.en_tournee??0,"dash-kpi-blue"],
+    ["Retours à faire",m.retours_a_faire??0,"dash-kpi-orange"],
+    ["Retours effectués",m.retours_effectues??0,"dash-kpi-green"],
+    ["Anomalies ouvertes",m.anomalies_ouvertes??0,"dash-kpi-orange"],
+    ["Immobilisés",m.immobilises??0,"dash-kpi-red"]
+  ];
+  $("dashboardKpis").innerHTML=kpis.map(k=>`<div class="dash-kpi ${k[2]}"><div class="dash-kpi-value">${esc(k[1])}</div><div class="dash-kpi-label">${esc(k[0])}</div></div>`).join("");
+  const q=$("dashboardSearch").value.trim().toLowerCase(),f=$("dashboardCycleFilter").value;
+  const fleet=(d.fleet||[]).filter(v=>{const hay=((v.label||v.code||"")+" "+(v.registration||"")+" "+(v.depart_driver||"")+" "+(v.retour_driver||"")).toLowerCase();return(!q||hay.includes(q))&&(!f||v.cycle===f)});
+  $("dashboardFleetCount").textContent=`${fleet.length} véhicule(s) affiché(s) • ${m.departs_a_faire??0} départ(s) encore à faire`;
+  $("dashboardFleet").innerHTML=fleet.length?fleet.map(v=>{
+    const driver=v.retour_driver||v.depart_driver||"—";
+    const issue=v.open_issue?`<div class="dash-alert">⚠ ${esc(v.open_issue.category)} • ${esc(v.open_issue.severity)}</div>`:"";
+    const vehicleState=v.status==="IMMOBILIZED"?'<span class="status-pill immobilized">Immobilisé</span>':v.status==="MAINTENANCE"?'<span class="status-pill maintenance">Maintenance</span>':'';
+    return `<article class="dash-fleet-row"><div class="dash-vehicle"><b>${esc(v.label||v.code)}</b><span>${esc(v.registration||"Plaque à renseigner")}</span></div><div><span class="dash-cycle ${cycleClass(v.cycle)}">${cycleLabel(v.cycle)}</span>${vehicleState}</div><div class="dash-cell"><span class="dash-caption">Livreur</span><b>${esc(driver)}</b></div><div class="dash-cell"><span class="dash-caption">Départ</span><b>${timeOnly(v.depart_at)}</b></div><div class="dash-cell"><span class="dash-caption">Retour</span><b>${timeOnly(v.retour_at)}</b></div>${issue}</article>`;
+  }).join(""):'<div class="empty">Aucun véhicule ne correspond aux filtres.</div>';
+}
+$("dashboardSearch").addEventListener("input",renderDashboard);
+$("dashboardCycleFilter").addEventListener("change",renderDashboard);
+$("dashboardRefresh").addEventListener("click",loadAdminDashboard);
+$("dashboardLogout").addEventListener("click",()=>{state.adminCode="";state.dashboard=null;$("adminCode").value="";show("driverScreen");});
+$("openHistoryFromDashboard").addEventListener("click",async()=>{ try{ const data=await apiPost({action:"admin_history",code:state.adminCode,limit:200}); state.history=data.inspections||[]; renderHistory(); show("adminListScreen"); }catch(e){ $("dashboardMessage").innerHTML=`<div class="notice error">${esc(e.message)}</div>`; } });
+'''
+          if 'async function dashboardPost' not in s:
+              s=s.replace('function showAdminMsg(text,type){',dashboard_js+'\nfunction showAdminMsg(text,type){',1)
+
+          login_new=r'''$("adminLogin").addEventListener("click",async()=>{ const code=$("adminCode").value.trim(); if(!code){showAdminMsg("Entre le code responsable.","error");return;} state.adminCode=code; $("adminLogin").disabled=true; $("adminLogin").innerHTML='<span class="loading"></span>Chargement…'; try{ await loadAdminDashboard(); }catch(e){ showAdminMsg(e.message,"error"); }finally{$("adminLogin").disabled=false;$("adminLogin").textContent="Accéder au tableau de bord";} });'''
+          s,n=re.subn(r'\$\("adminLogin"\)\.addEventListener\("click",async\(\)=>\{.*?\}\);\nfunction showAdminMsg',login_new+'\nfunction showAdminMsg',s,count=1,flags=re.S)
+          if n!=1:
+              raise SystemExit('admin login replacement failed')
+
+          s=s.replace('<button class="btn small outline" id="adminLogout" type="button">Quitter</button>','<div class="dash-actions"><button class="btn small outline" id="backDashboardFromHistory" type="button">Tableau de bord</button><button class="btn small outline" id="adminLogout" type="button">Quitter</button></div>',1)
+          if '$("backDashboardFromHistory")' not in s:
+              s=s.replace('$("filterDriver").addEventListener("input",renderHistory);', '$("backDashboardFromHistory").addEventListener("click",loadAdminDashboard); $("filterDriver").addEventListener("input",renderHistory);',1)
+
+          s=s.replace('brand.css?v=17','brand.css?v=18')
           p.write_text(s,encoding='utf-8')
 
           css=Path('brand.css')
           c=css.read_text(encoding='utf-8')
-          marker='/* Cycle départ / retour */'
-          if marker not in c:
-              c += '''\n\n/* Cycle départ / retour */\n.departure-pill{background:#1E3325!important;color:#8EE8A8!important;display:inline-flex!important}\n.return-pill{background:#332E1D!important;color:#F0D47E!important;display:inline-flex!important}\n.cycle-done-pill{background:#263129!important;color:#AEB8B0!important;display:inline-flex!important}\n.vehicle.cycle-complete{opacity:.58!important;cursor:not-allowed!important}\n.vehicle.cycle-complete:hover{border-color:#3A403B!important}\n'''
+          if '/* Dashboard responsable */' not in c:
+              c += r'''
+
+/* Dashboard responsable */
+.admin-mode .app{max-width:1180px}
+.dashboard-card{padding:22px}
+.dash-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dashboard-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0 18px}
+.dash-kpi{border:1px solid #3A403B;background:#191D1A;border-radius:14px;padding:15px}
+.dash-kpi-value{font-size:30px;line-height:1;font-weight:950;color:#fff}
+.dash-kpi-label{font-size:12px;color:#AEB5AF;margin-top:7px;font-weight:750}
+.dash-kpi-green{border-left:4px solid #38E06F}.dash-kpi-blue{border-left:4px solid #4A9CF5}.dash-kpi-orange{border-left:4px solid #F29A2E}.dash-kpi-red{border-left:4px solid #D63D3D}
+.dashboard-toolbar{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:18px}
+.dashboard-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.dashboard-fleet{display:flex;flex-direction:column;gap:8px}
+.dash-fleet-row{display:grid;grid-template-columns:minmax(150px,1.5fr) minmax(130px,1.1fr) minmax(130px,1.2fr) 80px 80px;gap:12px;align-items:center;background:#191D1A;border:1px solid #343A35;border-radius:13px;padding:12px}
+.dash-vehicle{display:flex;flex-direction:column;gap:3px}.dash-vehicle span{font-size:12px;color:#A7AFA9}
+.dash-cell{display:flex;flex-direction:column;gap:3px}.dash-caption{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#7F8881}
+.dash-cycle{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:850;margin-right:5px}.dash-depart{background:#1E3325;color:#8EE8A8}.dash-tour{background:#24354A;color:#A9CDF7}.dash-return{background:#332E1D;color:#F0D47E}.dash-done{background:#263129;color:#AEB8B0}
+.dash-alert{grid-column:1/-1;border-top:1px solid #3D352A;padding-top:8px;font-size:12px;color:#F0C781}
+@media(max-width:760px){.dashboard-grid{grid-template-columns:1fr 1fr}.dashboard-toolbar{grid-template-columns:1fr}.dash-fleet-row{grid-template-columns:1fr 1fr}.dash-vehicle{grid-column:1/-1}.dashboard-section-head{align-items:flex-start;flex-direction:column}.admin-mode .main{padding:10px}.dashboard-card{padding:14px}}
+'''
           css.write_text(c,encoding='utf-8')
           PY
-      - name: Commit departure return UI
+      - name: Commit manager dashboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -49,6 +131,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Ajoute le cycle depart retour"
+            git commit -m "Construit le tableau de bord responsable"
             git push
           fi
